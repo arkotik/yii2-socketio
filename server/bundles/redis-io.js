@@ -108,11 +108,14 @@ class RedisIO {
         }
     };
 
-    close(channel, data) {
+    control(data) {
         let event = this.parseEvent(data),
+          name = event.name,
           id = event.data.id;
-        if (id && id in this.io.sockets.connected) {
-            this.io.sockets.connected[id].disconnect(true);
+        if (name === "close") {
+            if (id && id in this.io.sockets.connected) {
+                this.io.sockets.connected[id].disconnect(true);
+            }
         }
     }
 
@@ -126,10 +129,11 @@ class RedisIO {
         }
 
         this.sub.on("message", (channel, data) => {
+            if ("control_channel" === channel) {
+                this.control(data);
+            }
             this.emit(channel, data);
         });
-
-        this.sub.on("close", this.close);
     }
 
 }

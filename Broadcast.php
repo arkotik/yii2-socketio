@@ -137,23 +137,15 @@ class Broadcast
     }
 	
 	/**
-	 * @param string $event
 	 * @param string $id
 	 * @throws Exception
 	 */
-	public static function closeConnection(string $event, string $id)
+	public static function closeConnection(string $id)
 	{
-		$eventClassName = self::getManager()->getList()[$event] ?? null;
-		if (null === $eventClassName) {
-			throw new Exception("Can not find $event");
-		}
-		foreach ($eventClassName::broadcastOn() as $channel) {
-			static::publish(static::channelName($channel), [
-				'name' => 'close',
-				'data' => compact('id'),
-			]);
-		}
-		
+		static::publish('control_channel', [
+			'name' => 'close',
+			'data' => compact('id'),
+		]);
     }
 
     /**
