@@ -55,7 +55,7 @@ trait CommandTrait
                 'port' => Broadcast::getDriver()->port,
                 'password' => Broadcast::getDriver()->password,
             ])),
-            'channels' => implode(',', Broadcast::channels()),
+            'channels' => implode(',', Broadcast::channels()) . 'control_channel',
             'nsp' => Broadcast::getManager()->nsp,
             'ssl' => empty($this->ssl) ? null : json_encode($this->ssl),
             'runtime' => Yii::getAlias('@runtime/logs'),
