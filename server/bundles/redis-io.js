@@ -56,6 +56,10 @@ class RedisIO {
 
             socket = this.wildcard(socket);
             socket.on('disconnect', () => {
+                this.pub.publish(channel + '.io', JSON.stringify({
+                    name: 'disconnect',
+                    id: socket.id
+                }));
                 // socket.io disconnect
             });
 

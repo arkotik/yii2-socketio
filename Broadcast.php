@@ -3,6 +3,8 @@
 namespace yiicod\socketio;
 
 use Exception;
+use ReflectionClass;
+use ReflectionException;
 use Yii;
 use yii\base\InvalidConfigException;
 use yii\di\NotInstantiableException;
@@ -11,6 +13,7 @@ use yii\helpers\HtmlPurifier;
 use yii\helpers\Json;
 use yiicod\base\helpers\LoggerMessage;
 use yiicod\socketio\drivers\RedisDriver;
+use yiicod\socketio\events\ControlInterface;
 use yiicod\socketio\events\EventPolicyInterface;
 use yiicod\socketio\events\EventPubInterface;
 use yiicod\socketio\events\EventRoomInterface;
@@ -37,24 +40,35 @@ class Broadcast
 	 */
     public static function on(string $event, array $data, string $id)
     {
-        // Clear data
-        array_walk_recursive($data, function (&$item, $key) {
-            $item = HtmlPurifier::process($item);
-        });
-
-        Yii::info(Json::encode([
-            'type' => 'on',
-            'name' => $event,
-            'data' => $data,
-            'id' => $id,
-        ]), 'socket.io');
-
-        $eventClassName = self::getManager()->getList()[$event] ?? null;
-        if (null === $eventClassName) {
-            Yii::error(LoggerMessage::trace("Can not find $event", [Json::encode($data)]));
-        }
-
-        Yii::$container->get(Process::class)->run($eventClassName, $data, $id);
+    	if ($event === 'disconnect') {
+			$eventClassName = self::getManager()->getList()['control'] ?? null;
+			if ($eventClassName && class_exists($eventClassName)) {
+				try {
+					$reflection = new ReflectionClass($eventClassName);
+					if (($instance = $reflection->newInstance()) instanceof ControlInterface) {
+						$instance->onDisconnect($id);
+					}
+				} catch (ReflectionException $e) {
+				}
+			}
+			return;
+		} else {
+			// Clear data
+			array_walk_recursive($data, function (&$item, $key) {
+				$item = HtmlPurifier::process($item);
+			});
+			Yii::info(Json::encode([
+				'type' => 'on',
+				'name' => $event,
+				'data' => $data,
+				'id' => $id,
+			]), 'socket.io');
+			$eventClassName = self::getManager()->getList()[$event] ?? null;
+			if (null === $eventClassName) {
+				Yii::error(LoggerMessage::trace("Can not find $event", [Json::encode($data)]));
+			}
+			Yii::$container->get(Process::class)->run($eventClassName, $data, $id);
+		}
     }
 
 	/**
