@@ -17,11 +17,4 @@ interface ControlInterface
 	 * @return mixed
 	 */
 	public function onDisconnect(string $id);
-	
-	/**
-	 * Get event name
-	 *
-	 * @return string
-	 */
-	public static function name(): string;
 }
